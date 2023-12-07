@@ -52,11 +52,11 @@
             background-color: #f2f2f2;
         }
 
-        #switch-camera-btn {
+        #clear-responses-btn {
             display: block;
             margin-top: 10px;
             padding: 8px;
-            background-color: #007BFF;
+            background-color: #dc3545;
             color: #fff;
             text-align: center;
             cursor: pointer;
@@ -68,7 +68,8 @@
         <h1 style="text-align: center;">QR Code Scanner</h1>
         <video id="qr-video" playsinline></video>
         <div id="qr-result"></div>
-        <button id="switch-camera-btn" onclick="switchCamera()">Switch Camera</button>
+        <div id="qr-result2"></div>
+        <button id="clear-responses-btn" onclick="clearResponses()">Clear Responses</button>
         <table id="response-table"></table>
     </div>
 
@@ -77,50 +78,33 @@
         document.addEventListener("DOMContentLoaded", () => {
             const video = document.getElementById("qr-video");
             const resultElement = document.getElementById("qr-result");
+            const resultElement2 = document.getElementById("qr-result2");
             const tableElement = document.getElementById("response-table");
-            const switchCameraBtn = document.getElementById("switch-camera-btn");
 
-            let scanner;
-            let currentCameraIndex = 0;
+            const scanner = new Instascan.Scanner({ video });
 
-            function startScanner(cameraIndex) {
-                if (scanner) {
-                    scanner.stop();
-                }
+            Instascan.Camera.getCameras()
+                .then((cameras) => {
+                    if (cameras.length > 0) {
+                        scanner.start(cameras[0]);
+                    } else {
+                        console.error("No cameras found.");
+                    }
+                })
+                .catch((error) => console.error("Error accessing cameras:", error));
 
-                scanner = new Instascan.Scanner({ video, mirror: false, facingMode: { exact: cameraIndex === 1 ? "user" : "environment" } });
-                scanner.addListener("scan", handleScan);
-
-                Instascan.Camera.getCameras()
-                    .then((cameras) => {
-                        if (cameras.length > 1) {
-                            switchCameraBtn.style.display = "block";
-                        } else {
-                            switchCameraBtn.style.display = "none";
-                        }
-
-                        if (cameraIndex < cameras.length) {
-                            currentCameraIndex = cameraIndex;
-                            scanner.start(cameras[cameraIndex]);
-                        } else {
-                            console.error("Selected camera index is out of bounds.");
-                        }
-                    })
-                    .catch((error) => console.error("Error accessing cameras:", error));
-            }
-
-            function handleScan(content) {
+            scanner.addListener("scan", (content) => {
                 resultElement.innerHTML = `<p>QR Code detected:</p><p>${content}</p>`;
 
                 // Perform the POST request with the scanned QR code data
-                postData("https://private-anon-6813788ec7-pwabackendagathis.apiary-mock.com/v1/services/pwa/api/v1/ticket/validate", { qr_code: content })
+                postData("https://3a-api-dev.ainosi.id/v1/services/pwa/api/v1/ticket/validate", { qr_code: content , device_sn: "cms_validation", source: "INTERNAL"})
                     .then((response) => {
                         renderTable(response.message);
                     })
                     .catch((error) => {
                         renderTable(`Error: ${error.message}`);
                     });
-            }
+            });
 
             function postData(url, data) {
                 return fetch(url, {
@@ -139,22 +123,21 @@
             }
 
             function renderTable(message) {
-                tableElement.innerHTML = ""; // Clear previous content
-
                 const dataRow = tableElement.insertRow(0);
 
                 const td = document.createElement("td");
                 td.textContent = message;
                 dataRow.appendChild(td);
             }
-
-            function switchCamera() {
-                currentCameraIndex = (currentCameraIndex + 1) % 2; // Toggle between 0 and 1
-                startScanner(currentCameraIndex);
-            }
-
-            startScanner(0);
         });
+
+        function clearResponses() {
+            const tableElement = document.getElementById("response-table");
+            const resultElement = document.getElementById("qr-result");
+
+            tableElement.innerHTML = ""; // Clear all rows in the table
+            resultElement.innerHTML = ""; // Clear the result div
+        }
     </script>
 </body>
 </html>
