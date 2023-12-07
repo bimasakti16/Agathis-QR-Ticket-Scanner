@@ -24,7 +24,7 @@
 
         #qr-video {
             width: 100%;
-            height: auto;
+            max-height:50%;
             border: 1px solid #ddd;
         }
 
@@ -66,7 +66,7 @@
 <body>
     <div id="video-container">
         <h1 style="text-align: center;">QR Code Scanner</h1>
-        <video id="qr-video" playsinline style="max-height:50%"></video>
+        <video id="qr-video" playsinline></video>
         <div id="qr-result"></div>
         <div id="qr-result2"></div>
         <button id="clear-responses-btn" onclick="clearResponses()">Clear Responses</button>
