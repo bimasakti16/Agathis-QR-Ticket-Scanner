@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        #qr-video {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+
+        #qr-result {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #response-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        #response-table th, #response-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #response-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <h1 style="text-align: center;">QR Code Scanner</h1>
+        <video id="qr-video" playsinline></video>
+        <div id="qr-result"></div>
+        <table id="response-table"></table>
+    </div>
+
+    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const video = document.getElementById("qr-video");
+            const resultElement = document.getElementById("qr-result");
+            const tableElement = document.getElementById("response-table");
+
+            const scanner = new Instascan.Scanner({ video });
+
+            Instascan.Camera.getCameras()
+                .then((cameras) => {
+                    if (cameras.length > 0) {
+                        scanner.start(cameras[0]);
+                    } else {
+                        console.error("No cameras found.");
+                    }
+                })
+                .catch((error) => console.error("Error accessing cameras:", error));
+
+            scanner.addListener("scan", (content) => {
+                resultElement.innerHTML = `<p>QR Code detected:</p><p>${content}</p>`;
+
+                // Perform the POST request with the scanned QR code data
+                postData("https://3a-api-dev.ainosi.id/v1/services/pwa/api/v1/ticket/validate", { qr_code: content })
+                    .then((response) => {
+                        renderTable(response.message);
+                    })
+                    .catch((error) => {
+                        renderTable(`Error: ${error.message}`);
+                    });
+            });
+
+            function postData(url, data) {
+                return fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                });
+            }
+
+            function renderTable(message) {
+                tableElement.innerHTML = ""; // Clear previous content
+
+                const dataRow = tableElement.insertRow(0);
+
+                const td = document.createElement("td");
+                td.textContent = message;
+                dataRow.appendChild(td);
+            }
+        });
+    </script>
+</body>
+</html>
