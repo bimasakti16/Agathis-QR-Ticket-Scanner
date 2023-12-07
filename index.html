@@ -99,7 +99,10 @@
                 // Perform the POST request with the scanned QR code data
                 postData("https://3a-api-dev.ainosi.id/v1/services/pwa/api/v1/ticket/validate", { qr_code: content , device_sn: "cms_validation", source: "INTERNAL"})
                     .then((response) => {
-                        renderTable(response.message);
+                    	if(response.message == "success")
+                        {
+                        	renderTable("Validasi Berhasil");
+                        } else { renderTable(response.message); }
                     })
                     .catch((error) => {
                         renderTable(`Error: ${error.message}`);
