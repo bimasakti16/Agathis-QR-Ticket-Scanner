@@ -116,7 +116,7 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                        renderTable(response.message);
                     }
                     return response.json();
                 });
