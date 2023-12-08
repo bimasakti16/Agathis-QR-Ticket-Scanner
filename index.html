@@ -121,7 +121,7 @@
                 postData("https://3a-api-dev.ainosi.id/v1/services/pwa/api/v1/ticket/validate", { qr_code: content , device_sn: "cms_validation", source: "INTERNAL"})
                     .then((response) => {
                         if(response.message == "success") {
-                            renderTable("Validasi Berhasil");
+                            renderTable(`Tiket berhasil di validasi pada : ${response.data.ticket_data.used_date}`);
                         } else {
                             renderTable(response.message);
                         }
