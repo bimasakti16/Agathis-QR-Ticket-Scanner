@@ -70,6 +70,7 @@
         <video id="qr-video" playsinline></video>
         <div id="qr-result"></div>
         <div id="qr-result2"></div>
+        <div id="camera-buttons"></div>
         <button id="clear-responses-btn" onclick="clearResponses()">Clear Responses</button>
         <table id="response-table"></table>
     </div>
@@ -81,18 +82,31 @@
             const resultElement = document.getElementById("qr-result");
             const resultElement2 = document.getElementById("qr-result2");
             const tableElement = document.getElementById("response-table");
+            const cameraButtonsContainer = document.getElementById("camera-buttons");
 
             const scanner = new Instascan.Scanner({ video });
 
             Instascan.Camera.getCameras()
                 .then((cameras) => {
                     if (cameras.length > 0) {
-                        scanner.start(cameras[0]);
+                        cameras.forEach((camera, index) => {
+                            const button = document.createElement("button");
+                            button.textContent = `Camera ${index + 1}`;
+                            button.addEventListener("click", () => startScanner(camera));
+                            cameraButtonsContainer.appendChild(button);
+                        });
+
+                        // Start the scanner with the first camera by default
+                        startScanner(cameras[0]);
                     } else {
                         console.error("No cameras found.");
                     }
                 })
                 .catch((error) => console.error("Error accessing cameras:", error));
+
+            function startScanner(camera) {
+                scanner.start(camera);
+            }
 
             scanner.addListener("scan", (content) => {
                 resultElement.innerHTML = `<p>QR Code detected:</p><p>${content}</p>`;
@@ -100,10 +114,11 @@
                 // Perform the POST request with the scanned QR code data
                 postData("https://3a-api-dev.ainosi.id/v1/services/pwa/api/v1/ticket/validate", { qr_code: content , device_sn: "cms_validation", source: "INTERNAL"})
                     .then((response) => {
-                    	if(response.message == "success")
-                        {
-                        	renderTable("Validasi Berhasil");
-                        } else { renderTable(response.message); }
+                        if(response.message == "success") {
+                            renderTable("Validasi Berhasil");
+                        } else {
+                            renderTable(response.message);
+                        }
                     })
                     .catch((error) => {
                         renderTable(`Error: ${error.message}`);
