@@ -110,6 +110,8 @@
 
             function startScanner(camera) {
                 scanner.start(camera);
+
+                video.style.transform = "scaleX(1)";
             }
 
             scanner.addListener("scan", (content) => {
